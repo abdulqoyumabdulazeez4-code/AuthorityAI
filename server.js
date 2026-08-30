@@ -32,7 +32,7 @@ app.post("/api/generate", upload.single("image"), async (req, res) => {
     const extension =
       req.file.originalname.split(".").pop().toLowerCase();
 
-    // 1. Ask Magic Hour for an upload URL
+    // 1. Get an upload URL from Magic Hour
     const uploadUrlResponse = await fetch(
       "https://api.magichour.ai/v1/files/upload-urls",
       {
@@ -65,7 +65,7 @@ app.post("/api/generate", upload.single("image"), async (req, res) => {
 
     const asset = uploadUrlData.items[0];
 
-    // 2. Upload the image to Magic Hour's temporary URL
+    // 2. Upload the selected image
     const imageBuffer = fs.readFileSync(localFile);
 
     const fileUploadResponse = await fetch(asset.upload_url, {
@@ -80,7 +80,7 @@ app.post("/api/generate", upload.single("image"), async (req, res) => {
       throw new Error("Could not upload image to Magic Hour.");
     }
 
-    // 3. Create the Image-to-Video job
+    // 3. Create the Image-to-Video project
     const videoResponse = await fetch(
       "https://api.magichour.ai/v1/image-to-video",
       {
@@ -93,7 +93,7 @@ app.post("/api/generate", upload.single("image"), async (req, res) => {
         body: JSON.stringify({
           name: "AuthorityAI Video",
           end_seconds: 5,
-          model: "kling-3.0",
+          model: "ltx-2",
           resolution: "480p",
           style: {
             prompt: prompt
