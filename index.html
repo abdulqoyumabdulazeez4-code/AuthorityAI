@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>BVN Record System</title>
+</head>
+<body>
+
+<h1>BVN Record System</h1>
+
+<h3>Save Record</h3>
+
+<input type="text" id="ticket" placeholder="Ticket ID">
+<br><br>
+
+<input type="text" id="bvn" placeholder="BVN Number">
+<br><br>
+
+<input type="text" id="name" placeholder="Full Name">
+<br><br>
+
+<input type="text" id="phone" placeholder="Phone Number">
+<br><br>
+
+<input type="text" id="dob" placeholder="Date of Birth">
+<br><br>
+
+<input type="text" id="gender" placeholder="Gender">
+<br><br>
+
+<button onclick="saveData()">Save Record</button>
+
+<p id="result"></p>
+
+<hr>
+
+<h3>Search by Ticket ID</h3>
+
+<input type="text" id="searchTicket" placeholder="Enter Ticket ID">
+<button onclick="searchTicket()">Search</button>
+
+<p id="ticketResult"></p>
+
+<script>
+function saveData() {
+
+let record = {
+ticket: document.getElementById("ticket").value,
+bvn: document.getElementById("bvn").value,
+name: document.getElementById("name").value,
+phone: document.getElementById("phone").value,
+dob: document.getElementById("dob").value,
+gender: document.getElementById("gender").value
+};
+
+localStorage.setItem(record.ticket, JSON.stringify(record));
+
+document.getElementById("result").innerHTML =
+"Record Saved Successfully!";
+}
+
+function searchTicket() {
+
+let ticket = document.getElementById("searchTicket").value;
+
+let data = localStorage.getItem(ticket);
+
+if(data){
+
+let record = JSON.parse(data);
+
+document.getElementById("ticketResult").innerHTML =
+"BVN: " + record.bvn + "<br>" +
+"Name: " + record.name + "<br>" +
+"Phone: " + record.phone + "<br>" +
+"DOB: " + record.dob + "<br>" +
+"Gender: " + record.gender;
+
+}else{
+
+document.getElementById("ticketResult").innerHTML =
+"Record Not Found";
+
+}
+}
+</script>
+
+</body>
+</html>

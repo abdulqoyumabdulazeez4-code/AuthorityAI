@@ -1,0 +1,1 @@
+alert("app.js loaded successfully!");
