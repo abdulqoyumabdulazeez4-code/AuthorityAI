@@ -1,21 +1,28 @@
 async function generateVideo() {
   const prompt = document.getElementById("prompt").value.trim();
+  const imageFile = document.getElementById("imageUpload").files[0];
+  const result = document.getElementById("result");
 
-  if (!prompt) {
-    alert("Please enter a video prompt.");
+  if (!imageFile) {
+    result.textContent = "Please select an image first.";
     return;
   }
 
-  const result = document.getElementById("result");
-  result.textContent = "Generating video...";
+  if (!prompt) {
+    result.textContent = "Please enter a video prompt.";
+    return;
+  }
+
+  result.textContent = "Uploading image and generating video...";
 
   try {
+    const formData = new FormData();
+    formData.append("image", imageFile);
+    formData.append("prompt", prompt);
+
     const response = await fetch("/api/generate", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({ prompt })
+      body: formData
     });
 
     const data = await response.json();
@@ -25,7 +32,10 @@ async function generateVideo() {
     }
 
     result.textContent = JSON.stringify(data, null, 2);
+
   } catch (error) {
+    console.error(error);
     result.textContent = "Error: " + error.message;
   }
 }
+  

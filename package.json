@@ -8,6 +8,6 @@
   },
   "dependencies": {
     "express": "^4.21.2",
-    "magic-hour": "^0.45.0"
+    "multer": "^2.0.2"
   }
 }

@@ -1,7 +1,11 @@
 const express = require("express");
+const multer = require("multer");
+const fs = require("fs");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+const upload = multer({ dest: "uploads/" });
 
 app.use(express.json());
 app.use(express.static(__dirname));
@@ -10,51 +14,92 @@ app.get("/healthz", (req, res) => {
   res.status(200).send("OK");
 });
 
-app.post("/api/generate", async (req, res) => {
+app.post("/api/generate", upload.single("image"), async (req, res) => {
   try {
-    const { prompt } = req.body;
-
-    if (!prompt) {
+    if (!req.file) {
       return res.status(400).json({
-        error: "Please enter a video prompt."
+        error: "Please upload an image."
       });
     }
 
-    const apiKey = process.env.MAGIC_HOUR_API_KEY;
+    const prompt = req.body.prompt || "A cinematic animation";
 
-    if (!apiKey) {
-      return res.status(500).json({
-        error: "Magic Hour API key is not configured."
-      });
-    }
+    const imageBuffer = fs.readFileSync(req.file.path);
 
-    const response = await fetch(
-      "https://api.magichour.ai/v1/video-projects",
+    const form = new FormData();
+
+    form.append(
+      "image",
+      new Blob([imageBuffer], { type: req.file.mimetype }),
+      req.file.originalname
+    );
+
+    const uploadResponse = await fetch(
+      "https://api.magichour.ai/v1/assets",
       {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${apiKey}`
+          "Authorization": `Bearer ${process.env.MAGIC_HOUR_API_KEY}`
+        },
+        body: form
+      }
+    );
+
+    const uploadData = await uploadResponse.json();
+
+    fs.unlinkSync(req.file.path);
+
+    if (!uploadResponse.ok) {
+      return res.status(uploadResponse.status).json(uploadData);
+    }
+
+    const imagePath =
+      uploadData.path ||
+      uploadData.file_path ||
+      uploadData.id;
+
+    const videoResponse = await fetch(
+      "https://api.magichour.ai/v1/image-to-video",
+      {
+        method: "POST",
+        headers: {
+          "accept": "application/json",
+          "authorization": `Bearer ${process.env.MAGIC_HOUR_API_KEY}`,
+          "content-type": "application/json"
         },
         body: JSON.stringify({
           name: "AuthorityAI Video",
-          prompt: prompt
+          end_seconds: 5,
+          model: "kling-3.0",
+          resolution: "720p",
+          audio: true,
+          style: {
+            prompt: prompt
+          },
+          assets: {
+            image_file_path: imagePath
+          }
         })
       }
     );
 
-    const data = await response.json();
+    const videoData = await videoResponse.json();
 
-    if (!response.ok) {
-      return res.status(response.status).json({
-        error: data.message || data.error || "Magic Hour request failed."
-      });
+    if (!videoResponse.ok) {
+      return res.status(videoResponse.status).json(videoData);
     }
 
-    res.json(data);
+    res.json(videoData);
 
   } catch (error) {
     console.error(error);
+
+    if (req.file) {
+      try {
+        fs.unlinkSync(req.file.path);
+      } catch {}
+    }
+
     res.status(500).json({
       error: error.message || "Video generation failed."
     });
