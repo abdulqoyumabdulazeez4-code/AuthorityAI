@@ -54,53 +54,60 @@ async function generateVideo() {
         );
       }
 
-      const status =
-        statusData.status ||
-        statusData.state ||
-        "";
+      const status = statusData.status || "";
 
-      if (
-        status.toLowerCase() === "complete" ||
-        status.toLowerCase() === "completed" ||
-        status.toLowerCase() === "succeeded"
-      ) {
+      if (status === "complete") {
         finished = true;
 
-        const videoUrl =
-          statusData.video_url ||
-          statusData.output_url ||
-          statusData.download_url ||
-          statusData.outputs?.[0]?.url;
+        const videoUrl = statusData.downloads?.[0]?.url;
 
         if (videoUrl) {
           result.innerHTML = `
             <p>Video ready! 🎉</p>
-            <video controls width="100%" src="${videoUrl}"></video>
+
+            <video
+              controls
+              width="100%"
+              src="${videoUrl}">
+            </video>
+
             <br><br>
-            <a href="${videoUrl}" target="_blank">
+
+            <a
+              href="${videoUrl}"
+              target="_blank">
               Open / Download Video
             </a>
           `;
         } else {
           result.textContent =
-            "Video completed, but Magic Hour did not return the video URL.";
+            "Video completed, but no download URL was returned.";
         }
       }
 
-      if (
-        status.toLowerCase() === "failed" ||
-        status.toLowerCase() === "error"
-      ) {
+      if (status === "error") {
+        finished = true;
+
         throw new Error(
+          statusData.error?.message ||
           statusData.error ||
-          statusData.message ||
           "Magic Hour video generation failed."
+        );
+      }
+
+      if (status === "canceled") {
+        finished = true;
+
+        throw new Error(
+          "The video generation was canceled."
         );
       }
     }
 
   } catch (error) {
     console.error(error);
-    result.textContent = "Error: " + error.message;
+
+    result.textContent =
+      "Error: " + error.message;
   }
 }
