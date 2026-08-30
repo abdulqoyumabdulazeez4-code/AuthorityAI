@@ -1,0 +1,13 @@
+{
+  "name": "authorityai",
+  "version": "1.0.0",
+  "description": "AuthorityAI video generation app",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "magic-hour": "^0.45.0"
+  }
+}
