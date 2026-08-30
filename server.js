@@ -15,6 +15,8 @@ app.get("/healthz", (req, res) => {
 });
 
 app.post("/api/generate", upload.single("image"), async (req, res) => {
+  let localFile;
+
   try {
     if (!req.file) {
       return res.status(400).json({
@@ -22,62 +24,82 @@ app.post("/api/generate", upload.single("image"), async (req, res) => {
       });
     }
 
-    const prompt = req.body.prompt || "A cinematic animation";
+    localFile = req.file.path;
 
-    const imageBuffer = fs.readFileSync(req.file.path);
+    const prompt =
+      req.body.prompt || "A cinematic animation with smooth camera movement";
 
-    const form = new FormData();
+    const extension =
+      req.file.originalname.split(".").pop().toLowerCase();
 
-    form.append(
-      "image",
-      new Blob([imageBuffer], { type: req.file.mimetype }),
-      req.file.originalname
-    );
-
-    const uploadResponse = await fetch(
-      "https://api.magichour.ai/v1/assets",
+    // 1. Ask Magic Hour for an upload URL
+    const uploadUrlResponse = await fetch(
+      "https://api.magichour.ai/v1/files/upload-urls",
       {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${process.env.MAGIC_HOUR_API_KEY}`
+          "Authorization": `Bearer ${process.env.MAGIC_HOUR_API_KEY}`,
+          "Content-Type": "application/json",
+          "Accept": "application/json"
         },
-        body: form
+        body: JSON.stringify({
+          items: [
+            {
+              type: "image",
+              extension: extension
+            }
+          ]
+        })
       }
     );
 
-    const uploadData = await uploadResponse.json();
+    const uploadUrlData = await uploadUrlResponse.json();
 
-    fs.unlinkSync(req.file.path);
-
-    if (!uploadResponse.ok) {
-      return res.status(uploadResponse.status).json(uploadData);
+    if (!uploadUrlResponse.ok) {
+      throw new Error(
+        uploadUrlData.message ||
+        uploadUrlData.error ||
+        "Could not get Magic Hour upload URL."
+      );
     }
 
-    const imagePath =
-      uploadData.path ||
-      uploadData.file_path ||
-      uploadData.id;
+    const asset = uploadUrlData.items[0];
 
+    // 2. Upload the image to Magic Hour's temporary URL
+    const imageBuffer = fs.readFileSync(localFile);
+
+    const fileUploadResponse = await fetch(asset.upload_url, {
+      method: "PUT",
+      headers: {
+        "Content-Type": req.file.mimetype
+      },
+      body: imageBuffer
+    });
+
+    if (!fileUploadResponse.ok) {
+      throw new Error("Could not upload image to Magic Hour.");
+    }
+
+    // 3. Create the Image-to-Video job
     const videoResponse = await fetch(
       "https://api.magichour.ai/v1/image-to-video",
       {
         method: "POST",
         headers: {
-          "accept": "application/json",
-          "authorization": `Bearer ${process.env.MAGIC_HOUR_API_KEY}`,
-          "content-type": "application/json"
+          "Authorization": `Bearer ${process.env.MAGIC_HOUR_API_KEY}`,
+          "Content-Type": "application/json",
+          "Accept": "application/json"
         },
         body: JSON.stringify({
           name: "AuthorityAI Video",
           end_seconds: 5,
           model: "kling-3.0",
-          resolution: "720p",
-          audio: true,
+          resolution: "480p",
           style: {
             prompt: prompt
           },
           assets: {
-            image_file_path: imagePath
+            image_file_path: asset.file_path
           }
         })
       }
@@ -86,23 +108,28 @@ app.post("/api/generate", upload.single("image"), async (req, res) => {
     const videoData = await videoResponse.json();
 
     if (!videoResponse.ok) {
-      return res.status(videoResponse.status).json(videoData);
+      throw new Error(
+        videoData.message ||
+        videoData.error ||
+        "Magic Hour video generation failed."
+      );
     }
 
     res.json(videoData);
 
   } catch (error) {
-    console.error(error);
-
-    if (req.file) {
-      try {
-        fs.unlinkSync(req.file.path);
-      } catch {}
-    }
+    console.error("Generation error:", error);
 
     res.status(500).json({
       error: error.message || "Video generation failed."
     });
+
+  } finally {
+    if (localFile) {
+      try {
+        fs.unlinkSync(localFile);
+      } catch {}
+    }
   }
 });
 
