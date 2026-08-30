@@ -1,5 +1,4 @@
 const express = require("express");
-const { Client } = require("magic-hour");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -21,28 +20,38 @@ app.post("/api/generate", async (req, res) => {
       });
     }
 
-    const client = new Client({
-      token: process.env.MAGIC_HOUR_API_KEY
-    });
+    const apiKey = process.env.MAGIC_HOUR_API_KEY;
 
-    const result = await client.v1.text_to_video.generate({
-      end_seconds: 5,
-      orientation: "landscape",
-      style: {
-        prompt: prompt
-      },
-      name: "AuthorityAI Video",
-      resolution: "480p",
-      wait_for_completion: true,
-      download_outputs: false
-    });
+    if (!apiKey) {
+      return res.status(500).json({
+        error: "Magic Hour API key is not configured."
+      });
+    }
 
-    res.json({
-      id: result.id,
-      status: result.status,
-      credits_charged: result.credits_charged,
-      downloads: result.downloads
-    });
+    const response = await fetch(
+      "https://api.magichour.ai/v1/video-projects",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+          name: "AuthorityAI Video",
+          prompt: prompt
+        })
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      return res.status(response.status).json({
+        error: data.message || data.error || "Magic Hour request failed."
+      });
+    }
+
+    res.json(data);
 
   } catch (error) {
     console.error(error);
