@@ -27,20 +27,21 @@ app.post("/api/generate", upload.single("image"), async (req, res) => {
     localFile = req.file.path;
 
     const prompt =
-      req.body.prompt || "A cinematic animation with smooth camera movement";
+      req.body.prompt ||
+      "A cinematic animation with smooth camera movement";
 
     const extension =
       req.file.originalname.split(".").pop().toLowerCase();
 
-    // 1. Get an upload URL from Magic Hour
+    // Get Magic Hour upload URL
     const uploadUrlResponse = await fetch(
       "https://api.magichour.ai/v1/files/upload-urls",
       {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${process.env.MAGIC_HOUR_API_KEY}`,
+          Authorization: `Bearer ${process.env.MAGIC_HOUR_API_KEY}`,
           "Content-Type": "application/json",
-          "Accept": "application/json"
+          Accept: "application/json"
         },
         body: JSON.stringify({
           items: [
@@ -59,13 +60,13 @@ app.post("/api/generate", upload.single("image"), async (req, res) => {
       throw new Error(
         uploadUrlData.message ||
         uploadUrlData.error ||
-        "Could not get Magic Hour upload URL."
+        "Could not get upload URL."
       );
     }
 
     const asset = uploadUrlData.items[0];
 
-    // 2. Upload the selected image
+    // Upload image
     const imageBuffer = fs.readFileSync(localFile);
 
     const fileUploadResponse = await fetch(asset.upload_url, {
@@ -80,15 +81,15 @@ app.post("/api/generate", upload.single("image"), async (req, res) => {
       throw new Error("Could not upload image to Magic Hour.");
     }
 
-    // 3. Create the Image-to-Video project
+    // Create video
     const videoResponse = await fetch(
       "https://api.magichour.ai/v1/image-to-video",
       {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${process.env.MAGIC_HOUR_API_KEY}`,
+          Authorization: `Bearer ${process.env.MAGIC_HOUR_API_KEY}`,
           "Content-Type": "application/json",
-          "Accept": "application/json"
+          Accept: "application/json"
         },
         body: JSON.stringify({
           name: "AuthorityAI Video",
@@ -111,14 +112,18 @@ app.post("/api/generate", upload.single("image"), async (req, res) => {
       throw new Error(
         videoData.message ||
         videoData.error ||
-        "Magic Hour video generation failed."
+        "Video creation failed."
       );
     }
 
-    res.json(videoData);
+    // Return the project ID to the browser
+    res.json({
+      success: true,
+      project_id: videoData.id
+    });
 
   } catch (error) {
-    console.error("Generation error:", error);
+    console.error(error);
 
     res.status(500).json({
       error: error.message || "Video generation failed."
@@ -130,6 +135,33 @@ app.post("/api/generate", upload.single("image"), async (req, res) => {
         fs.unlinkSync(localFile);
       } catch {}
     }
+  }
+});
+
+app.get("/api/status/:id", async (req, res) => {
+  try {
+    const response = await fetch(
+      `https://api.magichour.ai/v1/video-projects/${req.params.id}`,
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.MAGIC_HOUR_API_KEY}`,
+          Accept: "application/json"
+        }
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      return res.status(response.status).json(data);
+    }
+
+    res.json(data);
+
+  } catch (error) {
+    res.status(500).json({
+      error: error.message
+    });
   }
 });
 
