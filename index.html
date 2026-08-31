@@ -31,30 +31,46 @@
 
     <div id="mainApp" style="display:none;">
 
-        <h1>👑 AuthorityAI</h1>
+        <div class="hero">
 
-        <p>Create AI videos from your images</p>
+            <h1>👑 AUTHORITY AI</h1>
 
-        <input
-            type="text"
-            id="prompt"
-            placeholder="Describe your video">
+            <p class="tagline">
+                Create Powerful AI Videos From Images
+            </p>
 
-        <br><br>
+        </div>
 
-        <input
-            type="file"
-            id="imageUpload">
+        <div class="generator-card">
 
-        <br><br>
+            <h2>🎬 Video Generator</h2>
 
-        <button onclick="generateVideo()">
-            Generate Video
-        </button>
+            <input
+                type="text"
+                id="prompt"
+                placeholder="Describe your video">
 
-        <br><br>
+            <br><br>
 
-        <p id="result"></p>
+            <input
+                type="file"
+                id="imageUpload">
+
+            <br><br>
+
+            <button onclick="generateVideo()">
+                Generate Video
+            </button>
+
+            <br><br>
+
+            <p id="result"></p>
+
+        </div>
+
+        <div class="footer">
+            Powered by AuthorityAI
+        </div>
 
     </div>
 
