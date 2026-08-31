@@ -1,19 +1,31 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Authority AI</title>
+    <title>AuthorityAI</title>
 </head>
 <body>
+
+<div id="loginPage">
+    <h1>🔒 AuthorityAI</h1>
+
+    <p>Enter Access Password</p>
+
+    <input type="password" id="passwordBox" placeholder="Password">
+
+    <br><br>
+
+    <button onclick="login()">Login</button>
+
+    <p id="loginResult"></p>
+</div>
+
+<div id="mainApp" style="display:none;">
 
     <h1>Authority AI 🎬</h1>
 
     <p>Describe your video:</p>
 
-    <input
-        type="text"
-        id="prompt"
-        placeholder="Describe your video"
-    >
+    <input type="text" id="prompt" placeholder="Describe your video">
 
     <br><br>
 
@@ -25,7 +37,9 @@
 
     <p id="result"></p>
 
-    <script src="app.js"></script>
+</div>
+
+<script src="app.js"></script>
 
 </body>
 </html>
