@@ -11,99 +11,127 @@ function login() {
 }
 
 async function generateVideo() {
-  const prompt = document.getElementById("prompt").value.trim();
-  const imageFile = document.getElementById("imageUpload").files[0];
-  const result = document.getElementById("result");
+    const prompt = document.getElementById("prompt").value.trim();
+    const imageFile = document.getElementById("imageUpload").files[0];
+    const videoLength = Number(
+        document.getElementById("videoLength").value
+    );
+    const result = document.getElementById("result");
 
-  if (!imageFile) {
-    result.textContent = "Please select an image first.";
-    return;
-  }
-
-  if (!prompt) {
-    result.textContent = "Please enter a video prompt.";
-    return;
-  }
-
-  result.textContent = "Uploading image and creating video...";
-
-  try {
-    const formData = new FormData();
-
-    formData.append("image", imageFile);
-    formData.append("prompt", prompt);
-
-    const response = await fetch("/api/generate", {
-      method: "POST",
-      body: formData
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.error || "Video generation failed.");
+    if (!imageFile) {
+        result.textContent = "Please select an image first.";
+        return;
     }
 
-    const projectId = data.project_id;
+    if (!prompt) {
+        result.textContent = "Please enter a video prompt.";
+        return;
+    }
 
-    result.textContent = "Video is generating... Please wait.";
+    result.textContent =
+        "Uploading image and creating your video...";
 
-    let finished = false;
+    try {
+        const formData = new FormData();
 
-    while (!finished) {
-      await new Promise(resolve => setTimeout(resolve, 5000));
+        formData.append("image", imageFile);
+        formData.append("prompt", prompt);
+        formData.append("duration", videoLength);
 
-      const statusResponse = await fetch(`/api/status/${projectId}`);
+        const response = await fetch("/api/generate", {
+            method: "POST",
+            body: formData
+        });
 
-      const statusData = await statusResponse.json();
+        const data = await response.json();
 
-      if (!statusResponse.ok) {
-        throw new Error(
-          statusData.error || "Could not check video status."
-        );
-      }
-
-      const status = statusData.status || "";
-
-      if (status === "complete") {
-        finished = true;
-
-        const videoUrl = statusData.downloads?.[0]?.url;
-
-        if (videoUrl) {
-          result.innerHTML = `
-            <p>Video ready! 🎉</p>
-            <video controls width="100%" src="${videoUrl}"></video>
-            <br><br>
-            <a href="${videoUrl}" target="_blank">
-              Open / Download Video
-            </a>
-          `;
-        } else {
-          result.textContent =
-            "Video completed, but no download URL was returned.";
+        if (!response.ok) {
+            throw new Error(
+                data.error || "Video generation failed."
+            );
         }
-      }
 
-      if (status === "error") {
-        finished = true;
+        const projectId = data.project_id;
 
-        throw new Error(
-          statusData.error?.message ||
-          statusData.error ||
-          "Magic Hour video generation failed."
-        );
-      }
+        result.textContent =
+            "🎬 Your video is generating... Please wait.";
 
-      if (status === "canceled") {
-        finished = true;
+        let finished = false;
 
-        throw new Error("The video generation was canceled.");
-      }
+        while (!finished) {
+            await new Promise(resolve =>
+                setTimeout(resolve, 5000)
+            );
+
+            const statusResponse = await fetch(
+                `/api/status/${projectId}`
+            );
+
+            const statusData = await statusResponse.json();
+
+            if (!statusResponse.ok) {
+                throw new Error(
+                    statusData.error ||
+                    "Could not check video status."
+                );
+            }
+
+            const status = statusData.status || "";
+
+            if (status === "complete") {
+                finished = true;
+
+                const videoUrl =
+                    statusData.downloads?.[0]?.url;
+
+                if (videoUrl) {
+                    result.innerHTML = `
+                        <p>🎉 Video ready!</p>
+
+                        <video
+                            controls
+                            playsinline
+                            width="100%"
+                            src="${videoUrl}">
+                        </video>
+
+                        <br><br>
+
+                        <a
+                            href="${videoUrl}"
+                            target="_blank">
+                            Open / Download Video
+                        </a>
+                    `;
+                } else {
+                    result.textContent =
+                        "Video completed, but no download URL was returned.";
+                }
+            }
+
+            if (status === "error") {
+                finished = true;
+
+                throw new Error(
+                    statusData.error?.message ||
+                    statusData.error ||
+                    "Magic Hour video generation failed."
+                );
+            }
+
+            if (status === "canceled") {
+                finished = true;
+
+                throw new Error(
+                    "The video generation was canceled."
+                );
+            }
+        }
+
+    } catch (error) {
+        console.error(error);
+
+        result.textContent =
+            "Error: " + error.message;
     }
-
-  } catch (error) {
-    console.error(error);
-    result.textContent = "Error: " + error.message;
-  }
 }
