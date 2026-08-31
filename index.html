@@ -1,45 +1,64 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AuthorityAI</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<div id="loginPage">
-    <h1>🔒 AuthorityAI</h1>
+    <div id="loginPage">
 
-    <p>Enter Access Password</p>
+        <h1>🔒 AuthorityAI</h1>
 
-    <input type="password" id="passwordBox" placeholder="Password">
+        <p>Enter Access Password</p>
 
-    <br><br>
+        <input
+            type="password"
+            id="passwordBox"
+            placeholder="Enter Password">
 
-    <button onclick="login()">Login</button>
+        <br><br>
 
-    <p id="loginResult"></p>
-</div>
+        <button onclick="login()">
+            Login
+        </button>
 
-<div id="mainApp" style="display:none;">
+        <p id="loginResult"></p>
 
-    <h1>Authority AI 🎬</h1>
+    </div>
 
-    <p>Describe your video:</p>
+    <div id="mainApp" style="display:none;">
 
-    <input type="text" id="prompt" placeholder="Describe your video">
+        <h1>👑 AuthorityAI</h1>
 
-    <br><br>
+        <p>Create AI videos from your images</p>
 
-    <input type="file" id="imageUpload">
+        <input
+            type="text"
+            id="prompt"
+            placeholder="Describe your video">
 
-    <br><br>
+        <br><br>
 
-    <button onclick="generateVideo()">Generate Video</button>
+        <input
+            type="file"
+            id="imageUpload">
 
-    <p id="result"></p>
+        <br><br>
 
-</div>
+        <button onclick="generateVideo()">
+            Generate Video
+        </button>
 
-<script src="app.js"></script>
+        <br><br>
+
+        <p id="result"></p>
+
+    </div>
+
+    <script src="app.js"></script>
 
 </body>
 </html>

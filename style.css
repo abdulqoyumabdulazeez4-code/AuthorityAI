@@ -1,0 +1,62 @@
+body {
+    margin: 0;
+    padding: 0;
+    background: #0a0a0a;
+    color: white;
+    font-family: Arial, sans-serif;
+}
+
+#loginPage,
+#mainApp {
+    width: 90%;
+    max-width: 500px;
+    margin: 50px auto;
+    background: #111;
+    padding: 25px;
+    border-radius: 15px;
+    border: 2px solid gold;
+    box-shadow: 0 0 20px rgba(255,215,0,0.3);
+    text-align: center;
+}
+
+h1 {
+    color: gold;
+}
+
+input[type="text"],
+input[type="password"],
+input[type="file"] {
+    width: 90%;
+    padding: 12px;
+    margin-top: 10px;
+    border-radius: 8px;
+    border: 1px solid gold;
+    background: #1a1a1a;
+    color: white;
+}
+
+button {
+    background: gold;
+    color: black;
+    border: none;
+    padding: 12px 25px;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+    margin-top: 15px;
+}
+
+button:hover {
+    opacity: 0.9;
+}
+
+video {
+    width: 100%;
+    border-radius: 10px;
+    margin-top: 15px;
+}
+
+a {
+    color: gold;
+    text-decoration: none;
+}
