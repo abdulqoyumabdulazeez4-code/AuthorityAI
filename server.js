@@ -5,7 +5,9 @@ const fs = require("fs");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const upload = multer({ dest: "uploads/" });
+const upload = multer({
+    dest: "uploads/"
+});
 
 app.use(express.json());
 app.use(express.static(__dirname));
@@ -14,177 +16,482 @@ app.get("/healthz", (req, res) => {
     res.status(200).send("OK");
 });
 
-app.post("/api/generate", upload.single("image"), async (req, res) => {
-    let localFile;
 
-    try {
-        if (!req.file) {
-            return res.status(400).json({
-                error: "Please upload an image."
-            });
-        }
+// ==========================================
+// GENERATE TALKING VIDEO
+// ==========================================
 
-        localFile = req.file.path;
+app.post(
+    "/api/generate",
+    upload.single("image"),
+    async (req, res) => {
 
-        const prompt =
-            req.body.prompt ||
-            "A cinematic animation with smooth camera movement";
+        let imageFile;
 
-        const duration = Number(req.body.duration) || 5;
+        try {
 
-        const extension =
-            req.file.originalname
-                .split(".")
-                .pop()
-                .toLowerCase();
-
-        // Get Magic Hour upload URL
-        const uploadUrlResponse = await fetch(
-            "https://api.magichour.ai/v1/files/upload-urls",
-            {
-                method: "POST",
-                headers: {
-                    Authorization:
-                        `Bearer ${process.env.MAGIC_HOUR_API_KEY}`,
-                    "Content-Type": "application/json",
-                    Accept: "application/json"
-                },
-                body: JSON.stringify({
-                    items: [
-                        {
-                            type: "image",
-                            extension: extension
-                        }
-                    ]
-                })
+            // Check image
+            if (!req.file) {
+                return res.status(400).json({
+                    error: "Please upload an image."
+                });
             }
-        );
 
-        const uploadUrlData =
-            await uploadUrlResponse.json();
+            imageFile = req.file;
 
-        if (!uploadUrlResponse.ok) {
-            throw new Error(
-                uploadUrlData.message ||
-                uploadUrlData.error ||
-                "Could not get upload URL."
-            );
-        }
+            const prompt =
+                req.body.prompt?.trim();
 
-        const asset = uploadUrlData.items[0];
+            const duration =
+                Number(req.body.duration) || 15;
 
-        // Upload image
-        const imageBuffer =
-            fs.readFileSync(localFile);
-
-        const fileUploadResponse = await fetch(
-            asset.upload_url,
-            {
-                method: "PUT",
-                headers: {
-                    "Content-Type": req.file.mimetype
-                },
-                body: imageBuffer
+            if (!prompt) {
+                return res.status(400).json({
+                    error: "Please enter what the person should say."
+                });
             }
-        );
 
-        if (!fileUploadResponse.ok) {
-            throw new Error(
-                "Could not upload image to Magic Hour."
-            );
-        }
 
-        // Create video
-        const videoResponse = await fetch(
-            "https://api.magichour.ai/v1/image-to-video",
-            {
-                method: "POST",
-                headers: {
-                    Authorization:
-                        `Bearer ${process.env.MAGIC_HOUR_API_KEY}`,
-                    "Content-Type": "application/json",
-                    Accept: "application/json"
-                },
-                body: JSON.stringify({
-                    name: "AuthorityAI Video",
-                    end_seconds: duration,
-                    model: "ltx-2",
-                    resolution: "480p",
-                    style: {
-                        prompt: prompt
-                    },
-                    assets: {
-                        image_file_path:
-                            asset.file_path
+            // ==========================================
+            // STEP 1: UPLOAD IMAGE TO MAGIC HOUR
+            // ==========================================
+
+            console.log("Uploading image...");
+
+            const imageExtension =
+                imageFile.originalname
+                    .split(".")
+                    .pop()
+                    .toLowerCase();
+
+
+            const uploadUrlResponse =
+                await fetch(
+                    "https://api.magichour.ai/v1/files/upload-urls",
+                    {
+                        method: "POST",
+
+                        headers: {
+                            Authorization:
+                                `Bearer ${process.env.MAGIC_HOUR_API_KEY}`,
+
+                            "Content-Type":
+                                "application/json",
+
+                            Accept:
+                                "application/json"
+                        },
+
+                        body: JSON.stringify({
+                            items: [
+                                {
+                                    type: "image",
+                                    extension: imageExtension
+                                }
+                            ]
+                        })
                     }
-                })
+                );
+
+
+            const uploadUrlData =
+                await uploadUrlResponse.json();
+
+
+            if (!uploadUrlResponse.ok) {
+                throw new Error(
+                    uploadUrlData.message ||
+                    uploadUrlData.error ||
+                    "Could not get image upload URL."
+                );
             }
-        );
 
-        const videoData =
-            await videoResponse.json();
 
-        if (!videoResponse.ok) {
-            throw new Error(
-                videoData.message ||
-                videoData.error ||
-                "Video creation failed."
+            const imageAsset =
+                uploadUrlData.items[0];
+
+
+            const imageBuffer =
+                fs.readFileSync(
+                    imageFile.path
+                );
+
+
+            const imageUploadResponse =
+                await fetch(
+                    imageAsset.upload_url,
+                    {
+                        method: "PUT",
+
+                        headers: {
+                            "Content-Type":
+                                imageFile.mimetype
+                        },
+
+                        body: imageBuffer
+                    }
+                );
+
+
+            if (!imageUploadResponse.ok) {
+                throw new Error(
+                    "Could not upload image to Magic Hour."
+                );
+            }
+
+
+            console.log(
+                "Image uploaded successfully."
             );
-        }
 
-        res.json({
-            success: true,
-            project_id: videoData.id
-        });
 
-    } catch (error) {
-        console.error(error);
+            // ==========================================
+            // STEP 2: GENERATE AI VOICE
+            // ==========================================
 
-        res.status(500).json({
-            error:
-                error.message ||
-                "Video generation failed."
-        });
+            console.log(
+                "Generating David Attenborough voice..."
+            );
 
-    } finally {
-        if (localFile) {
-            try {
-                fs.unlinkSync(localFile);
-            } catch {}
-        }
-    }
-});
 
-app.get("/api/status/:id", async (req, res) => {
-    try {
-        const response = await fetch(
-            `https://api.magichour.ai/v1/video-projects/${req.params.id}`,
-            {
-                headers: {
-                    Authorization:
-                        `Bearer ${process.env.MAGIC_HOUR_API_KEY}`,
-                    Accept: "application/json"
+            const voiceResponse =
+                await fetch(
+                    "https://api.magichour.ai/v1/ai-voice-generator",
+                    {
+                        method: "POST",
+
+                        headers: {
+                            Authorization:
+                                `Bearer ${process.env.MAGIC_HOUR_API_KEY}`,
+
+                            "Content-Type":
+                                "application/json",
+
+                            Accept:
+                                "application/json"
+                        },
+
+                        body: JSON.stringify({
+
+                            name:
+                                "AuthorityAI Voice",
+
+                            style: {
+
+                                prompt:
+                                    prompt,
+
+                                voice_name:
+                                    "David Attenborough"
+                            }
+                        })
+                    }
+                );
+
+
+            const voiceData =
+                await voiceResponse.json();
+
+
+            if (!voiceResponse.ok) {
+                throw new Error(
+                    voiceData.message ||
+                    voiceData.error ||
+                    "Could not create AI voice."
+                );
+            }
+
+
+            const audioProjectId =
+                voiceData.id;
+
+
+            console.log(
+                "Voice project:",
+                audioProjectId
+            );
+
+
+            // ==========================================
+            // STEP 3: WAIT FOR AUDIO
+            // ==========================================
+
+            let audioUrl = null;
+
+            for (let i = 0; i < 120; i++) {
+
+                await new Promise(
+                    resolve =>
+                        setTimeout(resolve, 3000)
+                );
+
+
+                const audioStatusResponse =
+                    await fetch(
+                        `https://api.magichour.ai/v1/audio-projects/${audioProjectId}`,
+                        {
+                            method: "GET",
+
+                            headers: {
+                                Authorization:
+                                    `Bearer ${process.env.MAGIC_HOUR_API_KEY}`,
+
+                                Accept:
+                                    "application/json"
+                            }
+                        }
+                    );
+
+
+                const audioStatusData =
+                    await audioStatusResponse.json();
+
+
+                if (!audioStatusResponse.ok) {
+                    throw new Error(
+                        audioStatusData.message ||
+                        audioStatusData.error ||
+                        "Could not check voice status."
+                    );
+                }
+
+
+                const audioStatus =
+                    audioStatusData.status || "";
+
+
+                console.log(
+                    "Voice status:",
+                    audioStatus
+                );
+
+
+                if (audioStatus === "complete") {
+
+                    audioUrl =
+                        audioStatusData
+                            .downloads?.[0]?.url;
+
+                    break;
+                }
+
+
+                if (
+                    audioStatus === "error" ||
+                    audioStatus === "canceled"
+                ) {
+
+                    throw new Error(
+                        "AI voice generation failed."
+                    );
                 }
             }
-        );
 
-        const data = await response.json();
 
-        if (!response.ok) {
-            return res.status(response.status).json(data);
+            if (!audioUrl) {
+                throw new Error(
+                    "AI voice generation timed out."
+                );
+            }
+
+
+            console.log(
+                "Voice generated successfully."
+            );
+
+
+            // ==========================================
+            // STEP 4: CREATE TALKING PHOTO
+            // ==========================================
+
+            console.log(
+                "Creating talking photo..."
+            );
+
+
+            const talkingPhotoResponse =
+                await fetch(
+                    "https://api.magichour.ai/v1/ai-talking-photo",
+                    {
+                        method: "POST",
+
+                        headers: {
+                            Authorization:
+                                `Bearer ${process.env.MAGIC_HOUR_API_KEY}`,
+
+                            "Content-Type":
+                                "application/json",
+
+                            Accept:
+                                "application/json"
+                        },
+
+                        body: JSON.stringify({
+
+                            name:
+                                "AuthorityAI Talking Video",
+
+                            start_seconds:
+                                0,
+
+                            end_seconds:
+                                duration,
+
+                            assets: {
+
+                                image_file_path:
+                                    imageAsset.file_path,
+
+                                audio_file_path:
+                                    audioUrl
+                            }
+                        })
+                    }
+                );
+
+
+            const talkingPhotoData =
+                await talkingPhotoResponse.json();
+
+
+            if (!talkingPhotoResponse.ok) {
+                throw new Error(
+                    talkingPhotoData.message ||
+                    talkingPhotoData.error ||
+                    "Talking photo generation failed."
+                );
+            }
+
+
+            console.log(
+                "Talking video project created:",
+                talkingPhotoData.id
+            );
+
+
+            // ==========================================
+            // SEND PROJECT ID TO APP
+            // ==========================================
+
+            res.json({
+
+                success: true,
+
+                project_id:
+                    talkingPhotoData.id
+            });
+
+
+        } catch (error) {
+
+            console.error(
+                "Generation error:",
+                error
+            );
+
+
+            res.status(500).json({
+
+                error:
+                    error.message ||
+                    "Video generation failed."
+            });
+
+
+        } finally {
+
+            // Delete uploaded image
+            if (imageFile) {
+
+                try {
+                    fs.unlinkSync(
+                        imageFile.path
+                    );
+                } catch {}
+
+            }
+
         }
 
-        res.json(data);
-
-    } catch (error) {
-        res.status(500).json({
-            error: error.message
-        });
     }
-});
+);
 
-app.listen(PORT, () => {
-    console.log(
-        `AuthorityAI is running on port ${PORT}`
-    );
-});
+
+// ==========================================
+// CHECK VIDEO STATUS
+// ==========================================
+
+app.get(
+    "/api/status/:id",
+    async (req, res) => {
+
+        try {
+
+            const response =
+                await fetch(
+                    `https://api.magichour.ai/v1/video-projects/${req.params.id}`,
+                    {
+                        method: "GET",
+
+                        headers: {
+                            Authorization:
+                                `Bearer ${process.env.MAGIC_HOUR_API_KEY}`,
+
+                            Accept:
+                                "application/json"
+                        }
+                    }
+                );
+
+
+            const data =
+                await response.json();
+
+
+            if (!response.ok) {
+
+                return res
+                    .status(response.status)
+                    .json(data);
+
+            }
+
+
+            res.json(data);
+
+
+        } catch (error) {
+
+            console.error(
+                "Status error:",
+                error
+            );
+
+
+            res.status(500).json({
+
+                error:
+                    error.message
+
+            });
+
+        }
+
+    }
+);
+
+
+// ==========================================
+// START SERVER
+// ==========================================
+
+app.listen(
+    PORT,
+    () => {
+
+        console.log(
+            `AuthorityAI is running on port ${PORT}`
+        );
+
+    }
+);

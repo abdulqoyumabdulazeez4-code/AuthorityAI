@@ -1,21 +1,37 @@
-<!<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
+
 <head>
+
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0">
 
     <title>AuthorityAI</title>
 
-    <link rel="stylesheet" href="style.css">
+    <link
+        rel="stylesheet"
+        href="style.css">
+
 </head>
 
+
 <body>
+
+
+    <!-- ============================= -->
+    <!-- LOGIN PAGE -->
+    <!-- ============================= -->
 
     <div id="loginPage">
 
         <h1>🔒 AuthorityAI</h1>
 
-        <p>Enter Access Password</p>
+        <p>
+            Enter Access Password
+        </p>
 
         <input
             type="password"
@@ -33,27 +49,78 @@
     </div>
 
 
-    <div id="mainApp" style="display:none;">
+
+    <!-- ============================= -->
+    <!-- MAIN APPLICATION -->
+    <!-- ============================= -->
+
+    <div
+        id="mainApp"
+        style="display:none;">
+
+
+        <!-- HERO -->
 
         <div class="hero">
 
-            <h1>👑 AUTHORITY AI</h1>
+            <h1>
+                👑 AUTHORITY AI
+            </h1>
 
             <p class="tagline">
-                Create Powerful AI Videos From Images
+                Create Powerful AI Talking Videos
             </p>
 
         </div>
 
 
+
+        <!-- ============================= -->
+        <!-- VIDEO GENERATOR -->
+        <!-- ============================= -->
+
         <div class="generator-card">
 
-            <h2>🎬 Video Generator</h2>
+            <h2>
+                🎬 AI Talking Video Generator
+            </h2>
 
-            <input
-                type="text"
+
+            <p>
+                Upload an image and enter what
+                you want the person to say.
+            </p>
+
+
+
+            <!-- SCRIPT -->
+
+            <label for="prompt">
+
+                📝 What should the person say?
+
+            </label>
+
+            <br><br>
+
+
+            <textarea
                 id="prompt"
-                placeholder="Describe your video">
+                rows="6"
+                placeholder="Type the words you want the person to say..."></textarea>
+
+
+            <br><br>
+
+
+
+            <!-- IMAGE -->
+
+            <label for="imageUpload">
+
+                🖼️ Upload Your Image
+
+            </label>
 
             <br><br>
 
@@ -63,53 +130,87 @@
                 id="imageUpload"
                 accept="image/*">
 
+
             <br><br>
 
 
+
+            <!-- VIDEO LENGTH -->
+
             <label for="videoLength">
-                Video Length
+
+                ⏱️ Video Length
+
             </label>
 
             <br><br>
 
+
             <select id="videoLength">
-
-                <option value="5">
-                    5 seconds
-                </option>
-
-                <option value="10">
-                    10 seconds
-                </option>
 
                 <option value="15">
                     15 seconds
                 </option>
 
+                <option value="30">
+                    30 seconds
+                </option>
+
+                <option value="45">
+                    45 seconds
+                </option>
+
             </select>
 
+
             <br><br>
 
 
-            <button onclick="generateVideo()">
-                Generate Video
+
+            <!-- GENERATE BUTTON -->
+
+            <button
+                onclick="generateVideo()">
+
+                🎬 Generate Talking Video
+
             </button>
 
+
             <br><br>
 
-            <p id="result"></p>
+
+
+            <!-- RESULT -->
+
+            <div id="result"></div>
 
         </div>
 
+
+
+        <!-- ============================= -->
+        <!-- FOOTER -->
+        <!-- ============================= -->
 
         <div class="footer">
+
             Powered by AuthorityAI 👑
+
         </div>
+
 
     </div>
 
 
+
+    <!-- ============================= -->
+    <!-- JAVASCRIPT -->
+    <!-- ============================= -->
+
     <script src="app.js"></script>
 
+
 </body>
+
 </html>

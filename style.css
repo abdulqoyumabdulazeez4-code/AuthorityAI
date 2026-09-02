@@ -1,116 +1,87 @@
-body {
-    margin: 0;
-    padding: 0;
-    background: #0a0a0a;
-    color: white;
-    font-family: Arial, sans-serif;
-}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AuthorityAI</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
 
-#loginPage,
-#mainApp {
-    width: 90%;
-    max-width: 700px;
-    margin: 50px auto;
-    background: #111;
-    padding: 30px;
-    border-radius: 20px;
-    border: 2px solid gold;
-    box-shadow: 0 0 25px rgba(255, 215, 0, 0.25);
-}
+    <div id="loginPage">
 
-.hero {
-    text-align: center;
-    margin-bottom: 30px;
-}
+        <h1>🔒 AuthorityAI</h1>
 
-.hero h1 {
-    font-size: 42px;
-    color: gold;
-    margin-bottom: 10px;
-}
+        <p>Enter Access Password</p>
 
-.tagline {
-    color: #d0d0d0;
-    font-size: 18px;
-}
+        <input
+            type="password"
+            id="passwordBox"
+            placeholder="Enter Password">
 
-.generator-card {
-    background: #161616;
-    border: 1px solid gold;
-    border-radius: 15px;
-    padding: 25px;
-}
+        <br><br>
 
-.generator-card h2 {
-    color: gold;
-    text-align: center;
-}
+        <button onclick="login()">Login</button>
 
-input[type="text"],
-input[type="password"],
-input[type="file"] {
-    width: 100%;
-    padding: 12px;
-    margin-top: 10px;
-    border-radius: 10px;
-    border: 1px solid gold;
-    background: #1b1b1b;
-    color: white;
-    box-sizing: border-box;
-}
+        <p id="loginResult"></p>
 
-button {
-    width: 100%;
-    padding: 14px;
-    background: gold;
-    color: black;
-    border: none;
-    border-radius: 10px;
-    font-weight: bold;
-    font-size: 16px;
-    cursor: pointer;
-}
+    </div>
 
-button:hover {
-    opacity: 0.9;
-}
+    <div id="mainApp" style="display:none;">
 
-#result {
-    margin-top: 20px;
-    text-align: center;
-}
+        <div class="hero">
+            <h1>👑 AUTHORITY AI</h1>
 
-video {
-    width: 100%;
-    border-radius: 12px;
-    margin-top: 15px;
-}
+            <p class="tagline">
+                Create Powerful AI Videos From Images
+            </p>
+        </div>
 
-a {
-    color: gold;
-    text-decoration: none;
-    font-weight: bold;
-}
+        <div class="generator-card">
 
-.footer {
-    margin-top: 25px;
-    text-align: center;
-    color: #999;
-    font-size: 14px;
-}
+            <h2>🎬 Video Generator</h2>
 
-@media (max-width: 600px) {
-    .hero h1 {
-        font-size: 30px;
-    }
+            <input
+                type="text"
+                id="prompt"
+                placeholder="Describe your video">
 
-    .tagline {
-        font-size: 16px;
-    }
+            <br><br>
 
-    #loginPage,
-    #mainApp {
-        width: 95%;
-        padding: 20px;
-    }
-}
+            <input
+                type="file"
+                id="imageUpload"
+                accept="image/*">
+
+            <br><br>
+
+            <label for="videoLength">Video Length</label>
+
+            <select id="videoLength">
+                <option value="5">5 seconds</option>
+                <option value="10">10 seconds</option>
+                <option value="15">15 seconds</option>
+            </select>
+
+            <br><br>
+
+            <button onclick="generateVideo()">
+                Generate Video
+            </button>
+
+            <br><br>
+
+            <p id="result"></p>
+
+        </div>
+
+        <div class="footer">
+            Powered by AuthorityAI 👑
+        </div>
+
+    </div>
+
+    <script src="app.js"></script>
+
+</body>
+</html>

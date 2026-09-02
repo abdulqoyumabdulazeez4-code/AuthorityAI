@@ -1,137 +1,393 @@
 function login() {
-    const password = document.getElementById("passwordBox").value;
+    const password =
+        document.getElementById("passwordBox").value;
+
+    const loginResult =
+        document.getElementById("loginResult");
 
     if (password === "Authority2026") {
-        document.getElementById("loginPage").style.display = "none";
-        document.getElementById("mainApp").style.display = "block";
+
+        document.getElementById("loginPage").style.display =
+            "none";
+
+        document.getElementById("mainApp").style.display =
+            "block";
+
     } else {
-        document.getElementById("loginResult").textContent =
+
+        loginResult.textContent =
             "Wrong password";
+
     }
 }
 
+
+// ==========================================
+// GENERATE TALKING VIDEO
+// ==========================================
+
 async function generateVideo() {
-    const prompt = document.getElementById("prompt").value.trim();
-    const imageFile = document.getElementById("imageUpload").files[0];
-    const videoLength = Number(
-        document.getElementById("videoLength").value
-    );
-    const result = document.getElementById("result");
+
+    const prompt =
+        document.getElementById("prompt").value.trim();
+
+    const imageFile =
+        document.getElementById("imageUpload").files[0];
+
+    const videoLength =
+        Number(
+            document.getElementById("videoLength").value
+        );
+
+    const result =
+        document.getElementById("result");
+
+
+    // ==========================================
+    // CHECK IMAGE
+    // ==========================================
 
     if (!imageFile) {
-        result.textContent = "Please select an image first.";
+
+        result.innerHTML =
+            "⚠️ Please select an image first.";
+
         return;
     }
+
+
+    // ==========================================
+    // CHECK TEXT
+    // ==========================================
 
     if (!prompt) {
-        result.textContent = "Please enter a video prompt.";
+
+        result.innerHTML =
+            "⚠️ Please enter what you want the person to say.";
+
         return;
     }
 
-    result.textContent =
-        "Uploading image and creating your video...";
+
+    // ==========================================
+    // SHOW LOADING
+    // ==========================================
+
+    result.innerHTML = `
+        <p>
+            ⏳ <strong>Starting AuthorityAI...</strong>
+        </p>
+
+        <p>
+            🎙️ Creating the AI voice...
+        </p>
+
+        <p>
+            👤 Preparing the talking photo...
+        </p>
+
+        <p>
+            Please wait. Do not close this page.
+        </p>
+    `;
+
 
     try {
-        const formData = new FormData();
 
-        formData.append("image", imageFile);
-        formData.append("prompt", prompt);
-        formData.append("duration", videoLength);
+        // ==========================================
+        // CREATE FORM DATA
+        // ==========================================
 
-        const response = await fetch("/api/generate", {
-            method: "POST",
-            body: formData
-        });
+        const formData =
+            new FormData();
 
-        const data = await response.json();
+        formData.append(
+            "image",
+            imageFile
+        );
+
+        formData.append(
+            "prompt",
+            prompt
+        );
+
+        formData.append(
+            "duration",
+            videoLength
+        );
+
+
+        // ==========================================
+        // SEND TO OUR SERVER
+        // ==========================================
+
+        const response =
+            await fetch(
+                "/api/generate",
+                {
+                    method: "POST",
+                    body: formData
+                }
+            );
+
+
+        const data =
+            await response.json();
+
 
         if (!response.ok) {
+
             throw new Error(
-                data.error || "Video generation failed."
+                data.error ||
+                "Video generation failed."
             );
+
         }
 
-        const projectId = data.project_id;
 
-        result.textContent =
-            "🎬 Your video is generating... Please wait.";
+        const projectId =
+            data.project_id;
+
+
+        if (!projectId) {
+
+            throw new Error(
+                "No video project ID was returned."
+            );
+
+        }
+
+
+        // ==========================================
+        // VIDEO IS NOW GENERATING
+        // ==========================================
+
+        result.innerHTML = `
+            <p>
+                🎬 <strong>Your talking video is generating...</strong>
+            </p>
+
+            <p>
+                🎙️ David Attenborough voice created.
+            </p>
+
+            <p>
+                👤 Animating your image...
+            </p>
+
+            <p>
+                ⏳ Please wait...
+            </p>
+        `;
+
+
+        // ==========================================
+        // CHECK VIDEO STATUS
+        // ==========================================
 
         let finished = false;
 
+        let attempts = 0;
+
+        const maxAttempts = 240;
+
+
         while (!finished) {
-            await new Promise(resolve =>
-                setTimeout(resolve, 5000)
+
+            attempts++;
+
+
+            if (attempts > maxAttempts) {
+
+                throw new Error(
+                    "Video generation is taking too long. Please try again later."
+                );
+
+            }
+
+
+            // Wait 5 seconds
+            await new Promise(
+                resolve =>
+                    setTimeout(
+                        resolve,
+                        5000
+                    )
             );
 
-            const statusResponse = await fetch(
-                `/api/status/${projectId}`
-            );
 
-            const statusData = await statusResponse.json();
+            const statusResponse =
+                await fetch(
+                    `/api/status/${projectId}`
+                );
+
+
+            const statusData =
+                await statusResponse.json();
+
 
             if (!statusResponse.ok) {
+
                 throw new Error(
                     statusData.error ||
                     "Could not check video status."
                 );
+
             }
 
-            const status = statusData.status || "";
+
+            const status =
+                statusData.status || "";
+
+
+            console.log(
+                "Video status:",
+                status
+            );
+
+
+            // ==========================================
+            // VIDEO COMPLETE
+            // ==========================================
 
             if (status === "complete") {
+
                 finished = true;
+
 
                 const videoUrl =
-                    statusData.downloads?.[0]?.url;
+                    statusData
+                        .downloads?.[0]?.url;
 
-                if (videoUrl) {
-                    result.innerHTML = `
-                        <p>🎉 Video ready!</p>
 
-                        <video
-                            controls
-                            playsinline
-                            width="100%"
-                            src="${videoUrl}">
-                        </video>
+                if (!videoUrl) {
 
-                        <br><br>
+                    throw new Error(
+                        "Video completed, but no video URL was returned."
+                    );
 
-                        <a
-                            href="${videoUrl}"
-                            target="_blank">
-                            Open / Download Video
-                        </a>
-                    `;
-                } else {
-                    result.textContent =
-                        "Video completed, but no download URL was returned.";
                 }
+
+
+                result.innerHTML = `
+
+                    <p>
+                        🎉 <strong>
+                        Your AuthorityAI talking video is ready!
+                        </strong>
+                    </p>
+
+                    <video
+                        controls
+                        playsinline
+                        width="100%"
+                        src="${videoUrl}">
+                    </video>
+
+                    <br><br>
+
+                    <a
+                        href="${videoUrl}"
+                        target="_blank"
+                        rel="noopener noreferrer">
+
+                        ▶️ Open / Download Video
+
+                    </a>
+
+                `;
+
             }
 
-            if (status === "error") {
+
+            // ==========================================
+            // VIDEO ERROR
+            // ==========================================
+
+            else if (status === "error") {
+
                 finished = true;
 
-                throw new Error(
+
+                const errorMessage =
                     statusData.error?.message ||
                     statusData.error ||
-                    "Magic Hour video generation failed."
+                    "Talking video generation failed.";
+
+
+                throw new Error(
+                    errorMessage
                 );
+
             }
 
-            if (status === "canceled") {
+
+            // ==========================================
+            // VIDEO CANCELED
+            // ==========================================
+
+            else if (status === "canceled") {
+
                 finished = true;
+
 
                 throw new Error(
                     "The video generation was canceled."
                 );
+
             }
+
+
+            // ==========================================
+            // STILL PROCESSING
+            // ==========================================
+
+            else {
+
+                result.innerHTML = `
+
+                    <p>
+                        🎬 <strong>
+                        Your talking video is generating...
+                        </strong>
+                    </p>
+
+                    <p>
+                        📊 Status:
+                        ${status || "processing"}
+                    </p>
+
+                    <p>
+                        ⏳ Please wait...
+                    </p>
+
+                `;
+
+            }
+
         }
 
-    } catch (error) {
-        console.error(error);
 
-        result.textContent =
-            "Error: " + error.message;
+    } catch (error) {
+
+        console.error(
+            "AuthorityAI error:",
+            error
+        );
+
+
+        result.innerHTML = `
+
+            <p>
+                ❌ <strong>Something went wrong.</strong>
+            </p>
+
+            <p>
+                ${error.message}
+            </p>
+
+        `;
+
     }
+
 }
