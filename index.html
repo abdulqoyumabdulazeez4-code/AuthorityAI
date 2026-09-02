@@ -1,11 +1,14 @@
-<!DOCTYPE html>
+<!<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>AuthorityAI</title>
+
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
 
     <div id="loginPage">
@@ -29,6 +32,7 @@
 
     </div>
 
+
     <div id="mainApp" style="display:none;">
 
         <div class="hero">
@@ -41,6 +45,7 @@
 
         </div>
 
+
         <div class="generator-card">
 
             <h2>🎬 Video Generator</h2>
@@ -52,11 +57,39 @@
 
             <br><br>
 
+
             <input
                 type="file"
-                id="imageUpload">
+                id="imageUpload"
+                accept="image/*">
 
             <br><br>
+
+
+            <label for="videoLength">
+                Video Length
+            </label>
+
+            <br><br>
+
+            <select id="videoLength">
+
+                <option value="5">
+                    5 seconds
+                </option>
+
+                <option value="10">
+                    10 seconds
+                </option>
+
+                <option value="15">
+                    15 seconds
+                </option>
+
+            </select>
+
+            <br><br>
+
 
             <button onclick="generateVideo()">
                 Generate Video
@@ -68,11 +101,13 @@
 
         </div>
 
+
         <div class="footer">
-            Powered by AuthorityAI
+            Powered by AuthorityAI 👑
         </div>
 
     </div>
+
 
     <script src="app.js"></script>
 
