@@ -30,7 +30,10 @@ app.post(
 
         try {
 
-            // Check image
+            // ==========================================
+            // CHECK IMAGE
+            // ==========================================
+
             if (!req.file) {
                 return res.status(400).json({
                     error: "Please upload an image."
@@ -39,11 +42,17 @@ app.post(
 
             imageFile = req.file;
 
+
+            // ==========================================
+            // GET USER INPUT
+            // ==========================================
+
             const prompt =
                 req.body.prompt?.trim();
 
-            const duration =
-                Number(req.body.duration) || 15;
+            let duration =
+                Number(req.body.duration) || 5;
+
 
             if (!prompt) {
                 return res.status(400).json({
@@ -53,10 +62,19 @@ app.post(
 
 
             // ==========================================
-            // STEP 1: UPLOAD IMAGE TO MAGIC HOUR
+            // LIMIT VIDEO TO 5 SECONDS
             // ==========================================
 
-            console.log("Uploading image...");
+            duration = 5;
+
+
+            // ==========================================
+            // STEP 1
+            // UPLOAD IMAGE TO MAGIC HOUR
+            // ==========================================
+
+            console.log("Uploading image to Magic Hour...");
+
 
             const imageExtension =
                 imageFile.originalname
@@ -99,16 +117,27 @@ app.post(
 
 
             if (!uploadUrlResponse.ok) {
+
                 throw new Error(
                     uploadUrlData.message ||
                     uploadUrlData.error ||
                     "Could not get image upload URL."
                 );
+
             }
 
 
             const imageAsset =
-                uploadUrlData.items[0];
+                uploadUrlData.items?.[0];
+
+
+            if (!imageAsset) {
+
+                throw new Error(
+                    "Magic Hour did not return an image upload location."
+                );
+
+            }
 
 
             const imageBuffer =
@@ -134,9 +163,11 @@ app.post(
 
 
             if (!imageUploadResponse.ok) {
+
                 throw new Error(
                     "Could not upload image to Magic Hour."
                 );
+
             }
 
 
@@ -146,7 +177,8 @@ app.post(
 
 
             // ==========================================
-            // STEP 2: GENERATE AI VOICE
+            // STEP 2
+            // GENERATE DAVID ATTENBOROUGH VOICE
             // ==========================================
 
             console.log(
@@ -183,7 +215,9 @@ app.post(
 
                                 voice_name:
                                     "David Attenborough"
+
                             }
+
                         })
                     }
                 );
@@ -194,16 +228,27 @@ app.post(
 
 
             if (!voiceResponse.ok) {
+
                 throw new Error(
                     voiceData.message ||
                     voiceData.error ||
                     "Could not create AI voice."
                 );
+
             }
 
 
             const audioProjectId =
                 voiceData.id;
+
+
+            if (!audioProjectId) {
+
+                throw new Error(
+                    "Magic Hour did not return an audio project ID."
+                );
+
+            }
 
 
             console.log(
@@ -213,16 +258,21 @@ app.post(
 
 
             // ==========================================
-            // STEP 3: WAIT FOR AUDIO
+            // STEP 3
+            // WAIT FOR AUDIO
             // ==========================================
 
             let audioUrl = null;
+
 
             for (let i = 0; i < 120; i++) {
 
                 await new Promise(
                     resolve =>
-                        setTimeout(resolve, 3000)
+                        setTimeout(
+                            resolve,
+                            3000
+                        )
                 );
 
 
@@ -248,11 +298,13 @@ app.post(
 
 
                 if (!audioStatusResponse.ok) {
+
                     throw new Error(
                         audioStatusData.message ||
                         audioStatusData.error ||
                         "Could not check voice status."
                     );
+
                 }
 
 
@@ -273,6 +325,7 @@ app.post(
                             .downloads?.[0]?.url;
 
                     break;
+
                 }
 
 
@@ -284,14 +337,18 @@ app.post(
                     throw new Error(
                         "AI voice generation failed."
                     );
+
                 }
+
             }
 
 
             if (!audioUrl) {
+
                 throw new Error(
                     "AI voice generation timed out."
                 );
+
             }
 
 
@@ -301,11 +358,12 @@ app.post(
 
 
             // ==========================================
-            // STEP 4: CREATE TALKING PHOTO
+            // STEP 4
+            // CREATE TALKING PHOTO
             // ==========================================
 
             console.log(
-                "Creating talking photo..."
+                "Creating 5-second talking photo..."
             );
 
 
@@ -344,7 +402,9 @@ app.post(
 
                                 audio_file_path:
                                     audioUrl
+
                             }
+
                         })
                     }
                 );
@@ -355,11 +415,17 @@ app.post(
 
 
             if (!talkingPhotoResponse.ok) {
-                throw new Error(
+
+                const magicHourMessage =
                     talkingPhotoData.message ||
                     talkingPhotoData.error ||
-                    "Talking photo generation failed."
+                    "Talking photo generation failed.";
+
+
+                throw new Error(
+                    magicHourMessage
                 );
+
             }
 
 
@@ -370,7 +436,7 @@ app.post(
 
 
             // ==========================================
-            // SEND PROJECT ID TO APP
+            // SEND PROJECT ID TO WEBSITE
             // ==========================================
 
             res.json({
@@ -379,13 +445,14 @@ app.post(
 
                 project_id:
                     talkingPhotoData.id
+
             });
 
 
         } catch (error) {
 
             console.error(
-                "Generation error:",
+                "AuthorityAI generation error:",
                 error
             );
 
@@ -395,18 +462,24 @@ app.post(
                 error:
                     error.message ||
                     "Video generation failed."
+
             });
 
 
         } finally {
 
-            // Delete uploaded image
+            // ==========================================
+            // DELETE TEMPORARY IMAGE
+            // ==========================================
+
             if (imageFile) {
 
                 try {
+
                     fs.unlinkSync(
                         imageFile.path
                     );
+
                 } catch {}
 
             }
